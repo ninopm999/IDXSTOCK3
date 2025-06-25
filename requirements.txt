@@ -1,0 +1,9 @@
+# requirements.txt
+streamlit
+pandas
+numpy
+yfinance
+plotly
+textblob
+ta
+prophet
