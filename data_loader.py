@@ -4,13 +4,17 @@ import pandas as pd
 from datetime import datetime
 import streamlit as st
 import requests
-from config import DEFAULT_START_DATE, DEFAULT_END_DATE, NEWS_API_KEY_PLACEHOLDER
+from config import (
+    DEFAULT_START_DATE, 
+    DEFAULT_END_DATE, 
+    MARKETAUX_API_URL, 
+    MARKETAUX_API_KEY
+)
 
-@st.cache_data(ttl=3600) # Cache for 1 hour
+@st.cache_data(ttl=3600)
 def load_stock_data(symbol):
     """Loads historical stock data for a given symbol."""
     try:
-        # Explicitly set auto_adjust to False to silence the warning and maintain required columns
         df = yf.download(symbol, start=DEFAULT_START_DATE, end=DEFAULT_END_DATE, auto_adjust=False)
         if df.empty:
             st.error(f"No data found for symbol {symbol}. It may be an invalid ticker.")
@@ -21,7 +25,7 @@ def load_stock_data(symbol):
         st.error(f"Error loading stock data for {symbol}: {e}")
         return None
 
-@st.cache_data(ttl=86400) # Cache for 1 day
+@st.cache_data(ttl=86400)
 def load_fundamental_data(symbol):
     """Loads fundamental data (P/E, P/B, etc.) for a given symbol."""
     try:
@@ -38,17 +42,24 @@ def load_fundamental_data(symbol):
         st.warning(f"Could not load fundamental data: {e}")
         return {}
 
-@st.cache_data(ttl=10800) # Cache for 3 hours
-def fetch_stock_news(query):
-    """Fetches stock news from a news API. Placeholder function."""
-    st.warning("News feature is a placeholder. A real News API key is required.")
-    # This is a placeholder. In a real app, you would use a real News API.
-    # Example using NewsAPI:
-    # url = f"https://newsapi.org/v2/everything?q={query}&apiKey={NEWS_API_KEY_PLACEHOLDER}"
-    # response = requests.get(url)
-    # if response.status_code == 200:
-    #     return response.json().get('articles', [])
-    return [
-        {'title': f'Positive outlook for {query}', 'description': 'Analysts are bullish.'},
-        {'title': f'Market volatility impacts {query}', 'description': 'Investors are cautious.'}
-    ]
+@st.cache_data(ttl=10800)
+def fetch_stock_news(symbol):
+    """Fetches stock news from Marketaux API."""
+    if MARKETAUX_API_KEY == "YOUR_MARKETAUX_API_KEY" or not MARKETAUX_API_KEY:
+        st.warning("Marketaux API key not found. Please add it to your config.py file. News feature is disabled.")
+        return []
+    
+    params = {
+        "api_token": MARKETAUX_API_KEY,
+        "symbols": symbol,
+        "language": "en",
+        "limit": 5  # Fetch the 5 most recent articles
+    }
+    try:
+        response = requests.get(MARKETAUX_API_URL, params=params)
+        response.raise_for_status()  # Raises an HTTPError for bad responses (4xx or 5xx)
+        data = response.json()
+        return data.get('data', [])
+    except requests.exceptions.RequestException as e:
+        st.error(f"Error fetching news from Marketaux API: {e}")
+        return []
