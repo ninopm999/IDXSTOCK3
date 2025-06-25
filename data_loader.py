@@ -10,7 +10,8 @@ from config import DEFAULT_START_DATE, DEFAULT_END_DATE, NEWS_API_KEY_PLACEHOLDE
 def load_stock_data(symbol):
     """Loads historical stock data for a given symbol."""
     try:
-        df = yf.download(symbol, start=DEFAULT_START_DATE, end=DEFAULT_END_DATE)
+        # Explicitly set auto_adjust to False to silence the warning and maintain required columns
+        df = yf.download(symbol, start=DEFAULT_START_DATE, end=DEFAULT_END_DATE, auto_adjust=False)
         if df.empty:
             st.error(f"No data found for symbol {symbol}. It may be an invalid ticker.")
             return None
