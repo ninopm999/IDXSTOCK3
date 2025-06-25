@@ -1,4 +1,5 @@
 # modeling.py
+import streamlit as st  # <-- ADD THIS LINE
 import pandas as pd
 from prophet import Prophet
 import numpy as np
@@ -9,7 +10,7 @@ def train_prophet_model(df):
     """Trains a Prophet forecasting model."""
     model_df = df[['Date', 'Close']].copy()
     model_df.rename(columns={'Date': 'ds', 'Close': 'y'}, inplace=True)
-    
+
     model = Prophet(
         yearly_seasonality=True,
         weekly_seasonality=True,
@@ -31,7 +32,7 @@ def run_backtest(_model_forecast, df_historical):
     """Runs a simple backtest and calculates key performance metrics."""
     # Align forecast with historical data
     forecast_on_history = _model_forecast[_model_forecast['ds'].isin(df_historical['Date'])]
-    
+
     # Create signals
     signals = pd.DataFrame(index=forecast_on_history['ds'])
     signals['price'] = df_historical.set_index('Date')['Close']
@@ -45,12 +46,12 @@ def run_backtest(_model_forecast, df_historical):
     # Apply commission cost on trades
     trades = signals['positions'].diff().abs()
     strategy_returns -= trades * TRADING_COMMISSION_RATE
-    
+
     # --- Performance Metrics ---
     # 1. Cumulative Returns
     cumulative_strategy_returns = (1 + strategy_returns).cumprod()
     final_strategy_value = INITIAL_CAPITAL * cumulative_strategy_returns.iloc[-1]
-    
+
     # 2. Buy and Hold
     buy_and_hold_returns = (1 + signals['price'].pct_change()).cumprod()
     final_buy_and_hold_value = INITIAL_CAPITAL * buy_and_hold_returns.iloc[-1]
